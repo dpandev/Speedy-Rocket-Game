@@ -11,7 +11,7 @@ public class Alien {
     private int x = 0, y = 0;
 
     public Alien(int width, int height) {
-        alien = Toolkit.getDefaultToolkit().getImage("src/images/alien.png");
+        alien = Toolkit.getDefaultToolkit().getImage("images/alien.png");
         scaleAlien(width, height);
     }
     public void scaleAlien(int width, int height) {
