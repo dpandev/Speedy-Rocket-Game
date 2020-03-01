@@ -29,6 +29,8 @@ public class SpeedyRocket extends Application implements Commons {
     private boolean collision = false;
 
     private AnimationTimer gameLoop;
+    private AnimationTimer screenLoop;
+    private KeyEvent event;
     private ImageView bgImage;
     private ImageView gameName;
     private ImageView pressStart;
@@ -58,18 +60,14 @@ public class SpeedyRocket extends Application implements Commons {
             primaryStage.setTitle("Speedy Rocket");
             primaryStage.show();
 
-            mainPanel.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                gamePlay = true;
+            scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.SPACE) {
+                    System.out.println("Pressed: " + event.getCode());
+                    gamePlay = true;
+                }
             });
 
             loadStartScreen();
-
-            if (gamePlay) {
-                fadeScreen(mainPanel);
-                loadGame();
-                createPlayer();
-                startGameLoop();
-            }
             gameOver();
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,7 +84,7 @@ public class SpeedyRocket extends Application implements Commons {
 
         mainPanel.getChildren().addAll(bgImage, gameName, pressStart);
 
-        gameLoop = new AnimationTimer() {
+        screenLoop = new AnimationTimer() {
             double yReset = bgImage.getLayoutY();
             @Override
             public void handle(long now) {
@@ -96,12 +94,15 @@ public class SpeedyRocket extends Application implements Commons {
                 }
                 bgImage.setLayoutY(y);
                 if (gamePlay) {
-                    this.stop();
+                    fadeScreen(mainPanel);
+                    loadGame();
+                    createPlayer();
+                    startGameLoop();
                 }
             }
         };
         if (!gamePlay) {
-            gameLoop.start();
+            screenLoop.start();
         }
     }
     private void loadGame() {
