@@ -1,9 +1,11 @@
 package dpandev;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javafx.animation.FadeTransition;
+import javafx.event.EventHandler;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+
+import java.util.*;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
@@ -13,25 +15,26 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
-public class SpeedyRocket extends Application implements ActionListener, KeyListener, dpandev.Commons {
+public class SpeedyRocket extends Application implements Commons {
 
-    private boolean screenLoop = true;
     private boolean gamePlay = false;
 
-    private boolean thrust = false;
-    private KeyEvent movement, released;
-    private int rocketXTracker = SCREEN_WIDTH/2 - ROCKET_WIDTH;
+    private Random random = new Random();
+    private Image rocketImg;
+    private Image alienImg;
+    private List<Alien> aliens = new ArrayList<>();
+    private Rocket player;
+    private boolean collision = false;
 
-    private double SCENE_WIDTH = 400;
-    private double SCENE_HEIGHT = 800;
     private AnimationTimer gameLoop;
-    private ImageView bgImageView1;
-    private double bgScrollSpeed = 0.5;
-    private Pane backgroundLayer;
-
-    private static SpeedyRocket sr = new SpeedyRocket();
-    private static SplashScreen ss;
+    private ImageView bgImage;
+    private ImageView gameName;
+    private ImageView pressStart;
+    private Scene scene;
+    private Pane mainPanel;
+    private Pane scorePanel;//TODO
 
     public SpeedyRocket() {
         //default constructor
@@ -45,9 +48,9 @@ public class SpeedyRocket extends Application implements ActionListener, KeyList
     public void start(Stage primaryStage) {
         try {
             Group root = new Group();
-            backgroundLayer = new Pane();
-            root.getChildren().add(backgroundLayer);
-            Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
+            mainPanel = new Pane();
+            root.getChildren().add(mainPanel);
+            scene = new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT);
 
             primaryStage.setScene(scene);
             primaryStage.setResizable(false);
@@ -55,88 +58,127 @@ public class SpeedyRocket extends Application implements ActionListener, KeyList
             primaryStage.setTitle("Speedy Rocket");
             primaryStage.show();
 
-            loadGame();
-            while (gamePlay) {
+            mainPanel.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                gamePlay = true;
+            });
+
+            loadStartScreen();
+
+            if (gamePlay) {
+                fadeScreen(mainPanel);
+                loadGame();
+                createPlayer();
                 startGameLoop();
             }
-
+            gameOver();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    private void loadGame() {
-        bgImageView1 = new ImageView("images/spaceBG.png");
-        //repositions the background so it can scroll from bottom to top
-        bgImageView1.relocate(0, -bgImageView1.getImage().getHeight() + SCENE_HEIGHT);
-        backgroundLayer.getChildren().add(bgImageView1);
-    }
-    private void startGameLoop() {
+    private void loadStartScreen() {
+        bgImage = new ImageView("images/spaceBG.png");
+        bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
+
+        gameName = new ImageView("images/logoSR.png"); //0.77125
+        gameName.setY(SCREEN_HEIGHT - (SCREEN_HEIGHT * 0.836));
+        pressStart = new ImageView("images/pressStart.png"); //0.41625
+        pressStart.setY(SCREEN_HEIGHT - (SCREEN_HEIGHT * 0.471));
+
+        mainPanel.getChildren().addAll(bgImage, gameName, pressStart);
+
         gameLoop = new AnimationTimer() {
-            double yReset = bgImageView1.getLayoutY();
+            double yReset = bgImage.getLayoutY();
             @Override
             public void handle(long now) {
-                double y = bgImageView1.getLayoutY() + bgScrollSpeed;
-
+                double y = bgImage.getLayoutY() + BG_SCROLL_SPEED;
                 if (Double.compare(y, 0) >= 0) {
                     y = yReset;
                 }
-                bgImageView1.setLayoutY(y);
+                bgImage.setLayoutY(y);
+                if (gamePlay) {
+                    this.stop();
+                }
+            }
+        };
+        if (!gamePlay) {
+            gameLoop.start();
+        }
+    }
+    private void loadGame() {
+        rocketImg = new Image("images/rocketship.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
+        alienImg = new Image("images/alien.png", ALIEN_WIDTH, ALIEN_HEIGHT, true, true);
+        bgImage = new ImageView("images/spaceBG.png");
+        //repositions the background so it can scroll from bottom to top
+        bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
+
+        mainPanel.getChildren().add(bgImage);
+    }
+    private void startGameLoop() {
+        gameLoop = new AnimationTimer() {
+            double yReset = bgImage.getLayoutY();
+            @Override
+            public void handle(long now) {
+                double y = bgImage.getLayoutY() + BG_SCROLL_SPEED;
+                if (Double.compare(y, 0) >= 0) {
+                    y = yReset;
+                }
+                bgImage.setLayoutY(y);
+
+                player.processInput();
+                spawnAliens(true);
+
+                player.move();
+                aliens.forEach(Sprite::move);
+                checkCollisions();
+
+                player.updateUI();
+                aliens.forEach(Sprite::updateUI);
+                aliens.forEach(Sprite::checkRemovability);
+                removeSprites(aliens);
             }
         };
         gameLoop.start();
     }
-
-    private void gameScreen(boolean isSplash) {
-        //splash screen motion elements and graphics
-        Rocket player = new Rocket(Commons.ROCKET_WIDTH, Commons.ROCKET_HEIGHT);
-
-        int rocketX = rocketXTracker;
-
-        long startTime = System.currentTimeMillis();
-
-        while (screenLoop) {
-            //game loop
-            if ((System.currentTimeMillis() - startTime) > UPDATE_DIFF) {
-                //will check here is alien object has left the screen and add new aliens
-
-                //moves the rocket based on input
-                if (!isSplash) {
-                    if (thrust) {
-                        player.keyPressed(movement);
-                    } else {
-                        if (released != null) {
-                            player.keyReleased(released);
-                        }
-                    }
-                }
+    private void createPlayer() {
+        Input input = new Input(scene);
+        input.addListeners();
+        player = new Rocket(mainPanel, rocketImg, ROCKET_X_LOCATION, ROCKET_Y_LOCATION, 0, 0, 0, 0, ROCKET_SPEED, input);
+    }
+    private void spawnAliens(boolean random) {
+        if (random && this.random.nextInt(ALIEN_SPAWN_RANDOMNESS) != 0) {
+            return;
+        }
+        double x = this.random.nextDouble() * (SCREEN_WIDTH - alienImg.getWidth());
+        double y = -alienImg.getHeight();
+        Alien alien = new Alien(mainPanel, alienImg, x, y, 0, 0, ALIEN_MOV_SPEED, 0);
+        aliens.add(alien);
+    }
+    private void removeSprites(List<? extends Sprite> spriteList) {
+        Iterator<? extends Sprite> iter = spriteList.iterator();
+        while (iter.hasNext()) {
+            Sprite sprite = iter.next();
+            if (sprite.isRemovable()) {
+                sprite.removeFromLayer();
+                iter.remove();
             }
         }
     }
-    public void actionPerformed(ActionEvent e) {
-        //
-    }
-    public void keyPressed(KeyEvent e) {
-        this.movement = e;
-        if (e.getKeyCode() == KeyEvent.VK_A && gamePlay) {
-            thrust = true;
-        } else if (e.getKeyCode() == KeyEvent.VK_D && gamePlay) {
-            thrust = true;
-        } else if(e.getKeyCode() == KeyEvent.VK_ESCAPE && !gamePlay) {
-            System.exit(0);
+    private void checkCollisions() {
+        collision = false;
+        for (Alien aliens: aliens) {
+            if (player.collidesWith(aliens)) {
+                collision = true;
+                this.gamePlay = false;
+            }
         }
     }
-    public void keyReleased(KeyEvent e) {
-        this.released = e;
-        if (e.getKeyCode() == KeyEvent.VK_A && gamePlay) {
-            thrust = false;
-        } else if (e.getKeyCode() == KeyEvent.VK_D && gamePlay) {
-            thrust = false;
-        }
-    }
-    public void keyTyped(KeyEvent e) {
+    private void gameOver() {
         //
     }
-    private void fadeScreen() {
-        //
+    private void fadeScreen(Pane pane) {
+        FadeTransition ft = new FadeTransition(Duration.millis(3000), pane);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ft.play();
     }
 }

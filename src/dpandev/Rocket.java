@@ -1,60 +1,84 @@
 package dpandev;
 
-import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.awt.event.KeyEvent;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Pane;
 
-public class Rocket implements Commons{
+public class Rocket extends Sprite implements Commons{
 
     public enum Position {
         left, mid, right;
     }
 
-    private Image rocketship;
-    private int x = 0, y = 0;
-    private boolean thrusterOn = false;
     private Position destination;
+    private double rocketMinX;
+    private double rocketMaxX;
+    private double speed;
+    private Input input;
 
-    public Rocket(int width, int height) {
-        rocketship = Toolkit.getDefaultToolkit().getImage("images/rocketship.png");
-        scaleRocket(width, height);
+    public Rocket(Pane layer, Image image, double x, double y, double r, double dx, double dy, double dr, double speed, Input input) {
+        super(layer, image, x, y, r, dx, dy, dr);
+
+        this.input = input;
+        this.speed = speed;
+        init();
     }
-    public void scaleRocket(int width, int height) {
-        rocketship = rocketship.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+    public void init() {//doesnt allow rocket to be outside screen
+        rocketMinX = 0 - image.getWidth();
+        rocketMaxX = SCREEN_WIDTH - image.getWidth();
     }
-    public Image getRocketship() {
-        return rocketship;
-    }
-    public int getWidth() {
-        try {
-            return rocketship.getWidth(null);
-        } catch (Exception e) {
-            return -1;
+    public void processInput() {//
+        if (input.isMoveLeft()) {
+            dx = -speed;
+            setDestination(Position.left);
+        } else if (input.isMoveRight()) {
+            setDestination(Position.right);
+            dx = speed;
+        } else {
+            setDestination(null);
+            dx = 0.0;
         }
     }
-    public int getHeight() {
-        try {
-            return rocketship.getHeight(null);
-        } catch (Exception e) {
-            return -1;
+    public void engageAutoThrusters(Position direction) {
+        if (direction == Position.left) {
+            if (x > SCREEN_WIDTH/3) {
+                while (convertPos(x) != destination) {
+                    thrustLeft();
+                }
+            } else {
+                thrustBack(Position.right);
+                setDestination(null);
+            }
+        } else if (direction == Position.right) {
+            if (x > (SCREEN_WIDTH/3)*2) {
+                while (convertPos(x) != destination) {
+                    thrustRight();
+                }
+            } else {
+                thrustBack(Position.left);
+                setDestination(null);
+            }
         }
     }
-    public int getX() {
-        return this.x;
+    @Override
+    public void move() {
+        if (!canMove(convertPos(x), destination)) {
+            return;
+        }
+        x += dx;
+        engageAutoThrusters(destination);
+        checkBounds();
     }
-    public int getY() {
-        return this.y;
+    private void checkBounds() {
+        if (Double.compare( x, rocketMinX) < 0) {
+            x = rocketMinX;
+        } else if (Double.compare(x, rocketMaxX) > 0) {
+            x = rocketMaxX;
+        }
     }
-    public void setX(int x) {
-        this.x = x;
+    public void checkRemovability() {
+        //
     }
-    public void setY(int y) {
-        this.y = y;
-    }
-    public Position convertPos(int x) {
+    public Position convertPos(double x) {
         if (x <= SCREEN_WIDTH/3) return Position.left;
         else if (x <= (SCREEN_WIDTH/3)*2) return Position.mid;
         else if (x <= (SCREEN_WIDTH)) return Position.right;
@@ -68,12 +92,6 @@ public class Rocket implements Commons{
     }
     public boolean canMove(Position rocketPos, Position destination) {
         return rocketPos != destination;
-    }
-    public boolean isThrusterOn() {
-        return thrusterOn;
-    }
-    public void setThrusterOn(boolean thrusterOn) {
-        this.thrusterOn = thrusterOn;
     }
     public void thrustLeft() {
         this.x--;
@@ -91,53 +109,5 @@ public class Rocket implements Commons{
                 thrustRight();
             }
         }
-    }
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_A) {
-            if (x > SCREEN_WIDTH/3) {
-                while (convertPos(x) != destination) {
-                    thrustLeft();
-                }
-                setThrusterOn(false);
-            } else {
-                setThrusterOn(false);
-                thrustBack(Position.right);
-                setDestination(null);
-            }
-        } else if (e.getKeyCode() == KeyEvent.VK_D) {
-            if (x > (SCREEN_WIDTH/3)*2) {
-                while (convertPos(x) != destination) {
-                    thrustRight();
-                }
-                setThrusterOn(false);
-            } else {
-                setThrusterOn(false);
-                thrustBack(Position.left);
-                setDestination(null);
-            }
-        }
-    }
-    public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_A) {
-            setDestination(Position.left);
-            while (canMove(convertPos(getX()), getDestination())) {
-                thrustLeft();
-            }
-        } else if (e.getKeyCode() == KeyEvent.VK_D) {
-            setDestination(Position.right);
-            while (canMove(convertPos(getX()), getDestination())) {
-                thrustRight();
-            }
-        }
-    }
-    public Rectangle getHitbox() {
-        return (new Rectangle(x, y, rocketship.getWidth(null), rocketship.getHeight(null)));
-    }
-    public BufferedImage getBI() {
-        BufferedImage bi = new BufferedImage(rocketship.getWidth(null), rocketship.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics g = bi.getGraphics();
-        g.drawImage(rocketship, 0, 0, null);//(null) not using interface ImageObserver
-        g.dispose();
-        return bi;
     }
 }

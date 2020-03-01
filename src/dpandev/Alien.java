@@ -1,59 +1,20 @@
 package dpandev;
 
-import java.awt.Toolkit;
-import java.awt.Image;
-import java.awt.Rectangle;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Pane;
 
-public class Alien {
-    private Image alien;
-    private int x = 0, y = 0;
-
-    public Alien(int width, int height) {
-        alien = Toolkit.getDefaultToolkit().getImage("images/alien.png");
-        scaleAlien(width, height);
+public class Alien extends Sprite implements Commons{
+    public Alien(Pane layer, Image image, double x, double y, double r, double dx, double dy, double dr) {
+        super(layer, image, x, y, r, dx, dy, dr);
     }
-    public void scaleAlien(int width, int height) {
-        alien = alien.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+    @Override
+    public void move() {
+        y += dy;
     }
-    public Image getAlien() {
-        return alien;
-    }
-    public int getWidth() {
-        try {
-            return alien.getWidth(null);
-        } catch (Exception e) {
-            return -1;
+    @Override
+    public void checkRemovability() {
+        if(Double.compare(getY(), SCREEN_HEIGHT) > 0) {
+            setRemovable(true);
         }
-    }
-    public int getHeight() {
-        try {
-            return alien.getHeight(null);
-        } catch (Exception e) {
-            return -1;
-        }
-    }
-    public int getX() {
-        return x;
-    }
-    public int getY() {
-        return y;
-    }
-    public void setX(int x) {
-        this.x = x;
-    }
-    public void setY(int y) {
-        this.y = y;
-    }
-    public Rectangle getHitbox() {
-        return (new Rectangle(x, y, alien.getWidth(null), alien.getHeight(null)));
-    }
-    public BufferedImage getBI() {
-        BufferedImage bi = new BufferedImage(alien.getWidth(null), alien.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics g = bi.getGraphics();
-        g.drawImage(alien, 0, 0, null);
-        g.dispose();
-        return bi;
     }
 }
