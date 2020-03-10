@@ -100,6 +100,7 @@ public abstract class Sprite {
         this.layer = layer;
         this.image = image;
         this.x = x;
+        this.y = y;
         this.r = r;
         this.dx = dx;
         this.dy = dy;

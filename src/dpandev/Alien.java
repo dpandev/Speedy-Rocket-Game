@@ -20,10 +20,13 @@ public class Alien extends Sprite implements Commons{
      */
     public Alien(Pane layer, Image image, double x, double y, double r, double dx, double dy, double dr) {
         super(layer, image, x, y, r, dx, dy, dr);
+
+        System.out.println("WHY.. " + this.y + " : " + y);
     }
 
     /**
-     * Moves the {@link Alien} object. The movement is restricted to the {@code y} axis.
+     * Moves the {@link Alien} object. The movement is restricted to the {@code y} axis and is
+     * rendered off-screen at first.
      */
     @Override
     public void move() {
@@ -37,7 +40,7 @@ public class Alien extends Sprite implements Commons{
      */
     @Override
     public void checkRemovability() {
-        if(getY() < 0) {
+        if(Double.compare(getY(), SCREEN_HEIGHT) > 0) {
             setRemovable(true);
         }
     }

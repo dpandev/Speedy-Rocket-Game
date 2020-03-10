@@ -1,6 +1,7 @@
 package dpandev;
 
 import javafx.animation.FadeTransition;
+import javafx.event.EventHandler;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import java.util.*;
@@ -20,8 +21,8 @@ import javafx.util.Duration;
 public class SpeedyRocket extends Application implements Commons {
 
     private boolean gamePlay = false;
-
     private Random random = new Random();
+    private int aliensOnScreen = 0;
     private Image rocketImg;
     private Image alienImg;
     private List<Alien> aliens = new ArrayList<>();
@@ -37,7 +38,7 @@ public class SpeedyRocket extends Application implements Commons {
     private Scene scene;
     private Pane mainPanel;
     private Stage primaryStage;
-    private Pane scorePanel;//TODO
+    private Pane scorePanel;
 
     public SpeedyRocket() {
         //default constructor
@@ -52,7 +53,9 @@ public class SpeedyRocket extends Application implements Commons {
     }
 
     /**
-     * Sets the {@code scene} and initializes the game application window.
+     * Sets the {@code scene} and initializes the game application window. The scene height is
+     * larger than the visible application window height to allow for the rendering of off screen
+     * entities.
      * @param primaryStage the {@code Stage} to set
      */
     @Override
@@ -60,6 +63,7 @@ public class SpeedyRocket extends Application implements Commons {
         try {
             Group root = new Group();
             mainPanel = new Pane();
+            mainPanel.setMaxHeight(SCREEN_HEIGHT*2); //larger for off-screen rendering
             root.getChildren().add(mainPanel);
             scene = new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -68,13 +72,6 @@ public class SpeedyRocket extends Application implements Commons {
             primaryStage.setFullScreen(false);
             primaryStage.setTitle("Speedy Rocket");
             primaryStage.show();
-
-            //detects space bar being pressed to begin game
-            scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                if (event.getCode() == KeyCode.SPACE) {
-                    gamePlay = true;
-                }
-            });
 
             loadStartScreen();
             gameOver();
@@ -97,6 +94,14 @@ public class SpeedyRocket extends Application implements Commons {
 
         mainPanel.getChildren().addAll(bgImage, gameName, pressStart);
 
+        //detects space bar being pressed to begin game
+        EventHandler<KeyEvent> spaceBar = event -> {
+            if (event.getCode() == KeyCode.SPACE) {
+                gamePlay = true;
+            }
+        };
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
+
         screenLoop = new AnimationTimer() {
             double yReset = bgImage.getLayoutY();
             @Override
@@ -107,6 +112,8 @@ public class SpeedyRocket extends Application implements Commons {
                 }
                 bgImage.setLayoutY(y);
                 if (gamePlay) {
+                    screenLoop.stop();
+                    scene.removeEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
                     fadeScreen(mainPanel);
                     loadGame();
                     createPlayer();
@@ -147,7 +154,14 @@ public class SpeedyRocket extends Application implements Commons {
                 bgImage.setLayoutY(yLoc);
 
                 player.processInput();
-                spawnAliens(true);
+                if (aliensOnScreen == 0) {
+                    spawnAliens(true);
+                } else {
+                    //gets y position of last spawned alien
+                    if (aliens.get(aliens.size() - 1).getY() > SCREEN_HEIGHT/3) {
+                        spawnAliens(true);
+                    }
+                }
 
                 player.move();
                 aliens.forEach(Sprite::move);
@@ -169,7 +183,8 @@ public class SpeedyRocket extends Application implements Commons {
     private void createPlayer() {
         Input input = new Input(scene);
         input.addListeners();
-        player = new Rocket(mainPanel, rocketImg, ROCKET_X_LOCATION, 0, 0, 0, 0, 0, ROCKET_SPEED, input);
+        player = new Rocket(mainPanel, rocketImg, ROCKET_X_LOCATION - rocketImg.getWidth()/2,
+                ROCKET_Y_LOCATION, 0, 0, 0, 0, ROCKET_SPEED, input);
     }
 
     /**
@@ -182,16 +197,17 @@ public class SpeedyRocket extends Application implements Commons {
      *              {@code False} otherwise.
      */
     private void spawnAliens(boolean spawn) {
-        //limits the spawn rate by 0.5
-        if (spawn && this.random.nextInt(ALIEN_SPAWN_RANDOMNESS) > 6) {
+        //limits the total active alien count to 3
+        if (spawn && aliensOnScreen > 3) {
             return;
         }
         //randomly positions the Alien objects' x position
         double x = this.random.nextDouble() * (SCREEN_WIDTH - alienImg.getWidth());
         //sets the y position to be above the screen
-        double y = (SCREEN_HEIGHT * 2) + alienImg.getHeight();
+        double y = 0 - alienImg.getHeight();
         Alien alien = new Alien(mainPanel, alienImg, x, y, 0, 0, ALIEN_MOV_SPEED, 0);
         aliens.add(alien); //adds the object to the arraylist
+        aliensOnScreen++;
     }
 
     /**
@@ -206,6 +222,7 @@ public class SpeedyRocket extends Application implements Commons {
             if (sprite.isRemovable()) {
                 sprite.removeFromLayer();
                 iter.remove();
+                aliensOnScreen--;
             }
         }
     }
