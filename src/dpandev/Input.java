@@ -8,7 +8,7 @@ import java.util.BitSet;
 
 /**
  * Represents an {@link Input} object. This class assigns Key Event Listeners to the {@code Scene}
- * to determine if any of the specified keyboard keys are pressed/released.
+ * node to determine if any of the specified keyboard keys are pressed/released.
  */
 public class Input {
 

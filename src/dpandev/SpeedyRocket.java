@@ -12,6 +12,10 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -28,10 +32,12 @@ public class SpeedyRocket extends Application implements Commons {
     private List<Alien> aliens = new ArrayList<>();
     private Rocket player;
     private boolean collision = false;
+    private int score = 0;
 
     private AnimationTimer gameLoop;
     private AnimationTimer screenLoop;
     private KeyEvent event;
+    private Text scoreText = new Text();
     private ImageView bgImage;
     private ImageView gameName;
     private ImageView pressStart;
@@ -63,8 +69,10 @@ public class SpeedyRocket extends Application implements Commons {
         try {
             Group root = new Group();
             mainPanel = new Pane();
+            scorePanel = new Pane();
             mainPanel.setMaxHeight(SCREEN_HEIGHT*2); //larger for off-screen rendering
             root.getChildren().add(mainPanel);
+            root.getChildren().add(scorePanel);
             scene = new Scene(root, SCREEN_WIDTH, SCREEN_HEIGHT);
 
             primaryStage.setScene(scene);
@@ -74,7 +82,6 @@ public class SpeedyRocket extends Application implements Commons {
             primaryStage.show();
 
             loadStartScreen();
-            gameOver();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -117,6 +124,7 @@ public class SpeedyRocket extends Application implements Commons {
                     fadeScreen(mainPanel);
                     loadGame();
                     createPlayer();
+                    createScoreLayer();
                     startGameLoop();
                 }
             }
@@ -171,6 +179,13 @@ public class SpeedyRocket extends Application implements Commons {
                 aliens.forEach(Sprite::updateUI);
                 aliens.forEach(Sprite::checkRemovability);
                 removeSprites(aliens);
+
+                updateScoreLayer();
+
+                if (!gamePlay) {
+                    gameLoop.stop();
+                    gameOver();
+                }
             }
         };
         gameLoop.start();
@@ -235,8 +250,9 @@ public class SpeedyRocket extends Application implements Commons {
         collision = false;
         for (Alien aliens: aliens) {
             if (player.collidesWith(aliens)) {
+                System.out.println("Collision detected!");
                 collision = true;
-                this.gamePlay = false;
+                gamePlay = false;
             }
         }
     }
@@ -245,7 +261,46 @@ public class SpeedyRocket extends Application implements Commons {
      * Initializes the end of game elements.
      */
     private void gameOver() {
-        //
+        player.setDx(0); //sets player movement to halt
+        for (Alien alien : aliens) { //sets alien movement to halt
+            alien.setDy(0);
+        }
+
+        Text goMessage = new Text();
+        goMessage.setFont(Font.font("Impact", FontWeight.BOLD, 64));
+        goMessage.setFill(Color.WHITE);
+        goMessage.setStroke(Color.BLACK);
+        scorePanel.getChildren().add(goMessage);
+        double x = SCREEN_WIDTH/2 - goMessage.getBoundsInLocal().getWidth()/2;
+        double y = SCREEN_HEIGHT/2 - goMessage.getBoundsInLocal().getHeight()/2;
+        goMessage.relocate(x, y);
+    }
+
+    /**
+     * Creates the score text.
+     */
+    private void createScoreLayer() {
+        scoreText.setFont(Font.font("Impact", FontWeight.BOLD, 36));
+        scoreText.setFill(Color.WHITE);
+        scoreText.setStroke(Color.BLACK);
+        scorePanel.getChildren().add(scoreText);
+        scoreText.setText(Integer.toString(score));
+        double x = SCREEN_WIDTH/2 - scoreText.getBoundsInLocal().getWidth()/2;
+        double y = SCREEN_HEIGHT - (SCREEN_HEIGHT - (scoreText.getBoundsInLocal().getHeight())/2);
+        scoreText.relocate(x, y);
+    }
+
+    /**
+     * Updates the score on screen.
+     */
+    private void updateScoreLayer() {
+        scorePanel.getChildren().remove(scoreText);
+        score += BG_SCROLL_SPEED;
+        double x = SCREEN_WIDTH/2 - scoreText.getBoundsInLocal().getWidth()/2;
+        double y = SCREEN_HEIGHT - (SCREEN_HEIGHT - (scoreText.getBoundsInLocal().getHeight())/2);
+        scoreText.relocate(x,y);
+        scoreText.setText(Integer.toString(score));
+        scorePanel.getChildren().add(scoreText);
     }
 
     /**
@@ -253,7 +308,7 @@ public class SpeedyRocket extends Application implements Commons {
      * @param pane the Pane to apply the transition to
      */
     private void fadeScreen(Pane pane) {
-        FadeTransition ft = new FadeTransition(Duration.millis(800), pane);
+        FadeTransition ft = new FadeTransition(Duration.millis(1000), pane);
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ft.play();

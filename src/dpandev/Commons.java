@@ -13,6 +13,6 @@ public interface Commons {
     public static final double ROCKET_Y_LOCATION = SCREEN_HEIGHT - (SCREEN_HEIGHT/4);
     public static final double ROCKET_THRUST_DIFF = 10.0;
     public static final double ROCKET_RETURN_THRUST_DIFF = ROCKET_THRUST_DIFF/2;
-    public static final double ROCKET_SPEED = 0;
+    public static final double ROCKET_SPEED = 2.0;
     public static final double BG_SCROLL_SPEED = 5.0;
 }

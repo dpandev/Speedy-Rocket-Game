@@ -22,6 +22,8 @@ public class Rocket extends Sprite implements Commons{
     private Position destination;
     private double rocketMinX;
     private double rocketMaxX;
+    private double rocketMinR;
+    private double rocketMaxR;
     private double speed;
     private Input input;
 
@@ -52,7 +54,9 @@ public class Rocket extends Sprite implements Commons{
      */
     public void init() {//doesnt allow rocket to be outside screen by more than half rocket width
         rocketMinX = 0 - this.getCenterX();
-        rocketMaxX = SCREEN_WIDTH - this.getCenterX();
+        rocketMaxX = SCREEN_WIDTH + this.getCenterX();
+        rocketMinR = -30.0;
+        rocketMaxR = 30.0;
     }
 
     /**
@@ -63,16 +67,55 @@ public class Rocket extends Sprite implements Commons{
         if (input.isMoveLeft()) {
             setDestination(Position.LEFT);
             dx = -speed;
-            dr = -45d;
+            dr = -speed/4;
         } else if (input.isMoveRight()) {
             setDestination(Position.RIGHT);
             dx = speed;
-            dr = 45d;
+            dr = speed/4;
         } else {
             setDestination(null);
             dx = 0d;
             dr = 0d;
         }
+        thrusters();
+    }
+
+    /**
+     * Testing method to replace engageAutoThrusters()
+     */
+    public void thrusters() {
+        if (x < SCREEN_WIDTH/3 - getCenterX()) {
+            if (dx > 0) { //if on left side, moving right
+                dr = speed/4;
+            } else {
+                dr = -speed/4;
+            }
+        }
+        if (x > (SCREEN_WIDTH/3) * 2 + getCenterX()) {
+            if (dx < 0) { //if on right side, moving left
+                dr = -speed/4;
+            } else {
+                dr = speed/4;
+            }
+        }
+        if (dx == 0 && r < 0) { //if not moving and r is not reset
+            dr = speed/4;
+        } else if (dx == 0 && r > 0) {
+            dr = -speed/4;
+        }
+    }
+
+    public void checkR() {
+        if ((r += dr) > rocketMaxR) {
+            System.out.println("Reached MAX R value");
+            dr = 0;
+        }
+        if ((r += dr) < rocketMinR) {
+            System.out.println("Reached MIN R value");
+            dr = 0;
+        }
+        if (r > rocketMaxR) r = rocketMaxR;
+        if (r < rocketMinR) r = rocketMinR;
     }
 
     /**
@@ -117,12 +160,19 @@ public class Rocket extends Sprite implements Commons{
      */
     @Override
     public void move() {
-        if (!canMove(convertPos(x), destination)) {
+//        if (!canMove(convertPos(x), destination)) {
+//            return;
+//        }
+        if (x >= rocketMaxX && destination == Position.RIGHT) {
+            return;
+        } else if (x <= rocketMinX && destination == Position.LEFT) {
             return;
         }
+        checkR();
         x += dx;
         r += dr;
-        engageAutoThrusters(destination);
+        checkR();
+//        engageAutoThrusters(destination);
         checkBounds();
     }
 
@@ -131,7 +181,7 @@ public class Rocket extends Sprite implements Commons{
      * {@link #rocketMaxX}. Otherwise, sets the {@link #x} to the respective min/max value.
      */
     private void checkBounds() {
-        if (Double.compare( x, rocketMinX) < 0) {
+        if (Double.compare(x, rocketMinX) < 0) {
             x = rocketMinX;
         } else if (Double.compare(x, rocketMaxX) > 0) {
             x = rocketMaxX;
@@ -139,9 +189,13 @@ public class Rocket extends Sprite implements Commons{
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc} Sets the removability of the rocket to {@code True} if {@code dx} is 0.
      */
-    public void checkRemovability() {}
+    public void checkRemovability() {
+        if (Double.compare(dx, 0) < 0) {
+            setRemovable(true);
+        }
+    }
 
     /**
      * Converts a given {@code Double} value to a {@link Position} value.
