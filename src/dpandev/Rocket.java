@@ -8,22 +8,10 @@ import javafx.scene.layout.Pane;
  */
 public class Rocket extends Sprite implements Commons{
 
-    /**
-     * Represents the three main position states a {@link Rocket} object can have with respect
-     * to the {@code x} axis.
-     * {@link #LEFT}
-     * {@link #MID}
-     * {@link #RIGHT}
-     */
-    public enum Position {
-        LEFT, MID, RIGHT;
-    }
-
-    private Position destination;
-    private double rocketMinX;
-    private double rocketMaxX;
-    private double rocketMinR;
-    private double rocketMaxR;
+    private double rocketMinX = 0 - getCenterX()/7;
+    private double rocketMaxX = SCREEN_WIDTH - getCenterX()/4.5;
+    private double rocketMinR = -30.0;
+    private double rocketMaxR = 30.0;
     private double speed;
     private Input input;
 
@@ -45,73 +33,51 @@ public class Rocket extends Sprite implements Commons{
 
         this.input = input;
         this.speed = speed;
-        init();
     }
 
     /**
-     * Initializes the {@link #rocketMinX} and {@link #rocketMaxX} for the {@link Rocket} object.
-     * These values prevent the {@link Rocket} from going outside of the screen width.
+     * Sets the {@link #dx} and {@link #dr} of the {@link Rocket} based on
+     * the received input. Calls {@link #engageAutoThrusters()} to reposition the rocket
+     * automatically.
      */
-    public void init() {//doesnt allow rocket to be outside screen by more than half rocket width
-        rocketMinX = 0 - this.getCenterX();
-        rocketMaxX = SCREEN_WIDTH + this.getCenterX();
-        rocketMinR = -30.0;
-        rocketMaxR = 30.0;
-    }
-
-    /**
-     * Sets the {@link #dx}, {@link #dr} and {@link #destination} of the {@link Rocket} based on
-     * the received {@link Input}.
-     */
-    public void processInput() {//
+    public void processInput() {
         if (input.isMoveLeft()) {
-            setDestination(Position.LEFT);
             dx = -speed;
-            dr = -speed/4;
         } else if (input.isMoveRight()) {
-            setDestination(Position.RIGHT);
             dx = speed;
-            dr = speed/4;
         } else {
-            setDestination(null);
             dx = 0d;
             dr = 0d;
         }
-        thrusters();
+        engageAutoThrusters();
     }
 
     /**
-     * Testing method to replace engageAutoThrusters()
+     * Automatically resets the rocket rotational angle to zero when no input is detected and
+     * adjusts it when input is detected.
      */
-    public void thrusters() {
-        if (x < SCREEN_WIDTH/3 - getCenterX()) {
-            if (dx > 0) { //if on left side, moving right
-                dr = speed/4;
-            } else {
-                dr = -speed/4;
-            }
+    public void engageAutoThrusters() {
+        if (dx < 0) {
+            dr = -speed/6;
+        } else if (dx > 0) {
+            dr = speed/6;
         }
-        if (x > (SCREEN_WIDTH/3) * 2 + getCenterX()) {
-            if (dx < 0) { //if on right side, moving left
-                dr = -speed/4;
-            } else {
-                dr = speed/4;
-            }
-        }
-        if (dx == 0 && r < 0) { //if not moving and r is not reset
+        if (dx == 0 && r < 0) { //if not moving and rocket is tilted left
             dr = speed/4;
-        } else if (dx == 0 && r > 0) {
+        } else if (dx == 0 && r > 0) { //if not moving and rocket is tilted right
             dr = -speed/4;
         }
     }
 
-    public void checkR() {
+    /**
+     * Checks rocket rotational positioning and prevents the rotational angle from
+     * being greater than {@link Rocket#rocketMaxR} and not lower than {@link Rocket#rocketMinR}.
+     */
+    public void checkRotation() {
         if ((r += dr) > rocketMaxR) {
-            System.out.println("Reached MAX R value");
             dr = 0;
         }
         if ((r += dr) < rocketMinR) {
-            System.out.println("Reached MIN R value");
             dr = 0;
         }
         if (r > rocketMaxR) r = rocketMaxR;
@@ -119,60 +85,16 @@ public class Rocket extends Sprite implements Commons{
     }
 
     /**
-     * Automatically completes the journey to the {@link #destination}.
-     * @param direction the direction in which to move the rocket
-     */
-    public void engageAutoThrusters(Position direction) {
-        if (direction == Position.LEFT) {
-            if (x > SCREEN_WIDTH/3 - this.getCenterX()) {
-                while (convertPos(x) != destination) {
-                    thrustLeft();
-                    if (r != -45) {
-                        this.r = -45;
-                    }
-                }
-                r += 45; //sets rotation back to 0 once thrust action completes
-            } else {
-                thrustBack(Position.RIGHT);
-            }
-            setDestination(null);
-        } else if (direction == Position.RIGHT) {
-            if (x > (SCREEN_WIDTH/3)*2 - this.getCenterX()) {
-                while (convertPos(x) != destination) {
-                    thrustRight();
-                    if (r != 45) {
-                        this.r = 45;
-                    }
-                }
-                r -= 45; //set rotation back to 0 once thrust action completes
-            } else {
-                thrustBack(Position.LEFT);
-            }
-            setDestination(null);
-        }
-    }
-
-    /**
      * Moves the {@link Rocket} object and updates {@link dpandev.Sprite#r}. Movement is
-     * restricted to the {@code x} axis only. Calls {@link #engageAutoThrusters(Position)} to
+     * restricted to the {@code x} axis only. Calls {@link #engageAutoThrusters()} to
      * complete the journey and {@link #checkBounds()} to check that the rocket is within the
      * given screen bounds.
      */
     @Override
     public void move() {
-//        if (!canMove(convertPos(x), destination)) {
-//            return;
-//        }
-        if (x >= rocketMaxX && destination == Position.RIGHT) {
-            return;
-        } else if (x <= rocketMinX && destination == Position.LEFT) {
-            return;
-        }
-        checkR();
         x += dx;
         r += dr;
-        checkR();
-//        engageAutoThrusters(destination);
+        checkRotation();
         checkBounds();
     }
 
@@ -181,96 +103,16 @@ public class Rocket extends Sprite implements Commons{
      * {@link #rocketMaxX}. Otherwise, sets the {@link #x} to the respective min/max value.
      */
     private void checkBounds() {
-        if (Double.compare(x, rocketMinX) < 0) {
-            x = rocketMinX;
-        } else if (Double.compare(x, rocketMaxX) > 0) {
+        if (x > rocketMaxX) {
             x = rocketMaxX;
         }
-    }
-
-    /**
-     * {@inheritDoc} Sets the removability of the rocket to {@code True} if {@code dx} is 0.
-     */
-    public void checkRemovability() {
-        if (Double.compare(dx, 0) < 0) {
-            setRemovable(true);
+        if (x < rocketMinX) {
+            x = rocketMinX;
         }
     }
 
     /**
-     * Converts a given {@code Double} value to a {@link Position} value.
-     * @param x the value to convert
-     * @return the resulting {@link Position} value
+     * {@inheritDoc}
      */
-    public Position convertPos(double x) {
-        if (x <= (SCREEN_WIDTH/3 - this.getCenterX())) return Position.LEFT;
-        else if (x <= ((SCREEN_WIDTH/3)*2) - this.getCenterX()) return Position.MID;
-        else if (x <= (SCREEN_WIDTH) - this.getCenterX()) return Position.RIGHT;
-        return null;
-    }
-
-    /**
-     * Gets the destination.
-     * @return {@link #destination}
-     */
-    public Position getDestination() {
-        return this.destination;
-    }
-
-    /**
-     * Sets the {@link #destination}.
-     * @param destination the {@link Position} value to set
-     */
-    public void setDestination(Position destination) {
-        this.destination = destination;
-    }
-
-    /**
-     * Determines whether the {@link Rocket} can move towards a given {@link #destination}, given
-     * the current rocket {@link Position}.
-     * @param rocketPos the current rocket {@link Position}
-     * @param destination the current destination for the rocket
-     * @return {@code True} if the rocketPos does not equal destination, {@code False} otherwise.
-     */
-    public boolean canMove(Position rocketPos, Position destination) {
-        return rocketPos != destination;
-    }
-
-    /**
-     * Moves the rocket to the left.
-     */
-    public void thrustLeft() {
-        this.x -= speed;
-    }
-
-    /**
-     * Moves the rocket to the right.
-     */
-    public void thrustRight() {
-        this.x += speed;
-    }
-
-    /**
-     * Automatically moves the rocket back to a specific {@link Position}.
-     * @param pos the {@link Position} to move the rocket to
-     */
-    public void thrustBack(Position pos) {
-        if (pos == Position.LEFT) {
-            while (convertPos(x) != Position.LEFT || convertPos(x) != Position.MID) {
-                thrustLeft();
-                if (r != -45) {
-                    this.r = -45;
-                }
-            }
-            this.r += 45; //sets rocket angle back to zero
-        } else if (pos == Position.RIGHT) {
-            while (convertPos(x) != Position.RIGHT || convertPos(x) != Position.MID) {
-                thrustRight();
-                if (r != 45) {
-                    this.r = 45;
-                }
-            }
-            this.r -= 45; //sets rocket angle back to zero
-        }
-    }
+    public void checkRemovability() {}
 }

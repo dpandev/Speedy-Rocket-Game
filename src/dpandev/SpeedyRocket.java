@@ -32,6 +32,10 @@ public class SpeedyRocket extends Application implements Commons {
     private List<Alien> aliens = new ArrayList<>();
     private Rocket player;
     private boolean collision = false;
+
+    private double gameSpeed = 5.0;
+    private double alienMOVspeed = 2.0;
+    private double rocketSpeed = 2.5;
     private int score = 0;
 
     private AnimationTimer gameLoop;
@@ -155,7 +159,15 @@ public class SpeedyRocket extends Application implements Commons {
             double yLocReset = bgImage.getLayoutY();
             @Override
             public void handle(long now) {
-                double yLoc = bgImage.getLayoutY() + BG_SCROLL_SPEED;
+                if (score % 3000 == 0) {
+                    gameSpeed++;
+                    alienMOVspeed++;
+                    rocketSpeed++;
+                    System.out.println();
+                    System.out.println("[GAME SPEED INCREASE] " + gameSpeed);
+                    System.out.println();
+                }
+                double yLoc = bgImage.getLayoutY() + gameSpeed;
                 if (Double.compare(yLoc, 0) >= 0) {
                     yLoc = yLocReset;
                 }
@@ -199,7 +211,7 @@ public class SpeedyRocket extends Application implements Commons {
         Input input = new Input(scene);
         input.addListeners();
         player = new Rocket(mainPanel, rocketImg, ROCKET_X_LOCATION - rocketImg.getWidth()/2,
-                ROCKET_Y_LOCATION, 0, 0, 0, 0, ROCKET_SPEED, input);
+                ROCKET_Y_LOCATION, 0, 0, 0, 0, rocketSpeed, input);
     }
 
     /**
@@ -213,14 +225,20 @@ public class SpeedyRocket extends Application implements Commons {
      */
     private void spawnAliens(boolean spawn) {
         //limits the total active alien count to 3
-        if (spawn && aliensOnScreen > 3) {
-            return;
+        if (spawn && gameSpeed < 12) {
+            if (aliensOnScreen > 3) {
+                return;
+            }
+        } else if (spawn && gameSpeed < 20) {
+            if (aliensOnScreen > 1) {
+                return;
+            }
         }
         //randomly positions the Alien objects' x position
         double x = this.random.nextDouble() * (SCREEN_WIDTH - alienImg.getWidth());
         //sets the y position to be above the screen
         double y = 0 - alienImg.getHeight();
-        Alien alien = new Alien(mainPanel, alienImg, x, y, 0, 0, ALIEN_MOV_SPEED, 0);
+        Alien alien = new Alien(mainPanel, alienImg, x, y, 0, 0, alienMOVspeed, 0);
         aliens.add(alien); //adds the object to the arraylist
         aliensOnScreen++;
     }
