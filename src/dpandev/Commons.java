@@ -15,4 +15,6 @@ public interface Commons {
     public static final double ROCKET_RETURN_THRUST_DIFF = ROCKET_THRUST_DIFF/2;
     public static final double ROCKET_SPEED = 2.0;
     public static final double BG_SCROLL_SPEED = 5.0;
+    public static final double METEOR_WIDTH = 80d;
+    public static final double METEOR_HEIGHT = 80d;
 }

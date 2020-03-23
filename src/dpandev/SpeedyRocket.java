@@ -27,15 +27,19 @@ public class SpeedyRocket extends Application implements Commons {
     private boolean gamePlay = false;
     private Random random = new Random();
     private int aliensOnScreen = 0;
+    private int meteorsOnScreen;
     private Image rocketImg;
     private Image alienImg;
+    private Image meteorImg;
+    private List<Meteor>meteors = new ArrayList<>();
     private List<Alien> aliens = new ArrayList<>();
     private Rocket player;
     private boolean collision = false;
 
-    private double gameSpeed = 5.0;
-    private double alienMOVspeed = 2.0;
-    private double rocketSpeed = 2.5;
+    private double gameSpeed = 7.0;
+    private double alienMOVspeed = 4.0;
+    private double meteorMOVspeed = 4.0;
+    private double rocketSpeed = 4.5;
     private int score = 0;
 
     private AnimationTimer gameLoop;
@@ -144,6 +148,7 @@ public class SpeedyRocket extends Application implements Commons {
     private void loadGame() {
         rocketImg = new Image("images/rocketship.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
         alienImg = new Image("images/alien.png", ALIEN_WIDTH, ALIEN_HEIGHT, true, true);
+        meteorImg = new Image("images/meteor.png", METEOR_WIDTH, METEOR_HEIGHT, true, true);
         bgImage = new ImageView("images/spaceBG.png");
         //repositions the background so it can scroll from bottom to top
         bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
@@ -161,11 +166,12 @@ public class SpeedyRocket extends Application implements Commons {
             public void handle(long now) {
                 if (score % 3000 == 0) {
                     gameSpeed++;
-                    alienMOVspeed++;
+//                    alienMOVspeed++;
+                    meteorMOVspeed++;
                     rocketSpeed++;
-                    System.out.println();
-                    System.out.println("[GAME SPEED INCREASE] " + gameSpeed);
-                    System.out.println();
+                    if (score > 30000) {
+                        rocketSpeed += 5.0;
+                    }
                 }
                 double yLoc = bgImage.getLayoutY() + gameSpeed;
                 if (Double.compare(yLoc, 0) >= 0) {
@@ -174,23 +180,35 @@ public class SpeedyRocket extends Application implements Commons {
                 bgImage.setLayoutY(yLoc);
 
                 player.processInput();
-                if (aliensOnScreen == 0) {
-                    spawnAliens(true);
+//                if (aliensOnScreen == 0) {
+//                    spawnAliens(true);
+//                } else {
+//                    //gets y position of last spawned alien
+//                    if (aliens.get(aliens.size() - 1).getY() > SCREEN_HEIGHT/3) {
+//                        spawnAliens(true);
+//                    }
+//                }
+                if (meteorsOnScreen == 0) {
+                    spawnMeteors(true);
                 } else {
                     //gets y position of last spawned alien
-                    if (aliens.get(aliens.size() - 1).getY() > SCREEN_HEIGHT/3) {
-                        spawnAliens(true);
+                    if (meteors.get(meteors.size() - 1).getY() > SCREEN_HEIGHT/3) {
+                        spawnMeteors(true);
                     }
                 }
 
                 player.move();
-                aliens.forEach(Sprite::move);
+//                aliens.forEach(Sprite::move);
+                meteors.forEach(Sprite::move);
                 checkCollisions();
 
                 player.updateUI();
-                aliens.forEach(Sprite::updateUI);
-                aliens.forEach(Sprite::checkRemovability);
-                removeSprites(aliens);
+//                aliens.forEach(Sprite::updateUI);
+//                aliens.forEach(Sprite::checkRemovability);
+//                removeSprites(aliens);
+                meteors.forEach(Sprite::updateUI);
+                meteors.forEach(Sprite::checkRemovability);
+                removeSprites(meteors);
 
                 updateScoreLayer();
 
@@ -244,6 +262,35 @@ public class SpeedyRocket extends Application implements Commons {
     }
 
     /**
+     * Controls the spawning of {@link Meteor} objects. If {@code random.nextInt()} generates
+     * an integer greater than 6, an {@link Meteor} object is initialized with a random x position
+     * within the screen bounds and a y position above the screen bounds. The objects are then
+     * added to the {@code meteors} arraylist. Otherwise, if {@code random.nextInt()} generates a
+     * number less than 6, the method returns empty and no {@link Meteor} objects are initialized.
+     * @param spawn boolean - Set to {@code True} to spawn {@link Meteor} objects. Set to
+     *              {@code False} otherwise.
+     */
+    private void spawnMeteors(boolean spawn) {
+        //limits the total active meteor count to 3
+        if (spawn && gameSpeed < 12) {
+            if (meteorsOnScreen > 3) {
+                return;
+            }
+        } else if (spawn && gameSpeed < 20) {
+            if (meteorsOnScreen > 1) {
+                return;
+            }
+        }
+        //randomly positions the Meteor objects' x position
+        double x = this.random.nextDouble() * (SCREEN_WIDTH - meteorImg.getWidth());
+        //sets the y position to be above the screen
+        double y = 0 - meteorImg.getHeight();
+        Meteor meteor = new Meteor(mainPanel, meteorImg, x, y, 0, 0, meteorMOVspeed, 0);
+        meteors.add(meteor); //adds the object to the arraylist
+        meteorsOnScreen++;
+    }
+
+    /**
      * Removes {@link Sprite} objects from the {@code List} and {@code Pane} if the objects'
      * {@code removable} value is {@code True}.
      * @param spriteList the list to check objects' values
@@ -255,7 +302,8 @@ public class SpeedyRocket extends Application implements Commons {
             if (sprite.isRemovable()) {
                 sprite.removeFromLayer();
                 iter.remove();
-                aliensOnScreen--;
+//                aliensOnScreen--;
+                meteorsOnScreen--;
             }
         }
     }
@@ -266,11 +314,18 @@ public class SpeedyRocket extends Application implements Commons {
      */
     private void checkCollisions() {
         collision = false;
-        for (Alien aliens: aliens) {
-            if (player.collidesWith(aliens)) {
+//        for (Alien aliens: aliens) {
+//            if (player.collidesWith(aliens)) {
+//                System.out.println("Collision detected!");
+//                collision = true;
+////                gamePlay = false;
+//            }
+//        }
+        for (Meteor meteor: meteors) {
+            if (player.collidesWith(meteor)) {
                 System.out.println("Collision detected!");
                 collision = true;
-                gamePlay = false;
+//                gamePlay = false;
             }
         }
     }

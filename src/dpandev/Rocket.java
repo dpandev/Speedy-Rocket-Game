@@ -119,10 +119,10 @@ public class Rocket extends Sprite implements Commons{
      */
     @Override
     public boolean collidesWith(Sprite otherSprite) {
-        return (otherSprite.x + otherSprite.width >= x + getWidth() * 0.20
-                && otherSprite.y + otherSprite.height >= y + getHeight() * 0.15
-                && otherSprite.x <= (x + width) - getWidth() * 0.20
-                && otherSprite.y <= (y + height) - getHeight() * 0.15);
+        return (otherSprite.x + otherSprite.width * 0.90 >= x + getWidth() * 0.20
+                && otherSprite.y + otherSprite.height * 0.90 >= y + getHeight() * 0.15
+                && otherSprite.x + getWidth() * 0.10 <= (x + width) - getWidth() * 0.20
+                && otherSprite.y + getHeight() * 0.10 <= (y + height) - getHeight() * 0.15);
     }
 
     /**
