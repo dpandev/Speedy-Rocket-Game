@@ -33,6 +33,7 @@ public class Rocket extends Sprite implements Commons{
 
         this.input = input;
         this.speed = speed;
+
     }
 
     /**
@@ -109,6 +110,19 @@ public class Rocket extends Sprite implements Commons{
         if (x < rocketMinX) {
             x = rocketMinX;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param otherSprite another {@link Sprite} object to compare values with
+     * @return
+     */
+    @Override
+    public boolean collidesWith(Sprite otherSprite) {
+        return (otherSprite.x + otherSprite.width >= x + getWidth() * 0.20
+                && otherSprite.y + otherSprite.height >= y + getHeight() * 0.15
+                && otherSprite.x <= (x + width) - getWidth() * 0.20
+                && otherSprite.y <= (y + height) - getHeight() * 0.15);
     }
 
     /**
