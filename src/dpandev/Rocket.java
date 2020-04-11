@@ -33,7 +33,6 @@ public class Rocket extends Sprite implements Commons{
 
         this.input = input;
         this.speed = speed;
-
     }
 
     /**
@@ -43,9 +42,15 @@ public class Rocket extends Sprite implements Commons{
      */
     public void processInput() {
         if (input.isMoveLeft()) {
-            dx = -speed;
+            if (r <= 0) {
+                dr = 0 - r;
+                dx = -speed;
+            }
         } else if (input.isMoveRight()) {
-            dx = speed;
+            if (r >= 0) {
+                dr = 0 - r;
+                dx = speed;
+            }
         } else {
             dx = 0d;
             dr = 0d;
@@ -119,10 +124,11 @@ public class Rocket extends Sprite implements Commons{
      */
     @Override
     public boolean collidesWith(Sprite otherSprite) {
-        return (otherSprite.x + otherSprite.width * 0.90 >= x + getWidth() * 0.20
-                && otherSprite.y + otherSprite.height * 0.90 >= y + getHeight() * 0.15
-                && otherSprite.x + getWidth() * 0.10 <= (x + width) - getWidth() * 0.20
-                && otherSprite.y + getHeight() * 0.10 <= (y + height) - getHeight() * 0.15);
+        return (otherSprite.x + otherSprite.width >= x + (getWidth() * 0.10)
+                && otherSprite.y + otherSprite.height >= y + (getHeight() * 0.10)
+                && otherSprite.x + (otherSprite.getWidth() * 0.20) <= (x + width)
+                && otherSprite.y + (otherSprite.getHeight() * 0.20) <= (y + height)
+        );
     }
 
     /**

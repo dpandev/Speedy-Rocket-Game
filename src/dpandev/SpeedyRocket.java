@@ -26,25 +26,24 @@ public class SpeedyRocket extends Application implements Commons {
 
     private boolean gamePlay = false;
     private Random random = new Random();
-    private int aliensOnScreen = 0;
     private int meteorsOnScreen;
     private Image rocketImg;
-    private Image alienImg;
     private Image meteorImg;
+    private ImageView explosionImage;
     private List<Meteor>meteors = new ArrayList<>();
     private List<Alien> aliens = new ArrayList<>();
     private Rocket player;
     private boolean collision = false;
 
-    private double gameSpeed = 7.0;
-    private double alienMOVspeed = 4.0;
-    private double meteorMOVspeed = 4.0;
-    private double rocketSpeed = 4.5;
-    private int score = 0;
+    private double gameSpeed;
+    private double meteorMOVspeed;
+    private double rocketSpeed;
+    private int score;
 
     private AnimationTimer gameLoop;
     private AnimationTimer screenLoop;
     private KeyEvent event;
+    private EventHandler<KeyEvent> spaceBar;
     private Text scoreText = new Text();
     private ImageView bgImage;
     private ImageView gameName;
@@ -99,6 +98,7 @@ public class SpeedyRocket extends Application implements Commons {
      * Loads the elements for the game start screen and starts the background image loop.
      */
     private void loadStartScreen() {
+        System.out.println("loadStartScreen");
         bgImage = new ImageView("images/spaceBG.png");
         bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
 
@@ -110,13 +110,14 @@ public class SpeedyRocket extends Application implements Commons {
         mainPanel.getChildren().addAll(bgImage, gameName, pressStart);
 
         //detects space bar being pressed to begin game
-        EventHandler<KeyEvent> spaceBar = event -> {
+        spaceBar = event -> {
             if (event.getCode() == KeyCode.SPACE) {
                 gamePlay = true;
             }
         };
         scene.addEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
 
+        System.out.println("screenLoop");
         screenLoop = new AnimationTimer() {
             double yReset = bgImage.getLayoutY();
             @Override
@@ -146,10 +147,14 @@ public class SpeedyRocket extends Application implements Commons {
      * Loads the elements of the game and adds them to the {@code mainPanel} scene.
      */
     private void loadGame() {
-        rocketImg = new Image("images/rocketship.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
-        alienImg = new Image("images/alien.png", ALIEN_WIDTH, ALIEN_HEIGHT, true, true);
+        mainPanel.getChildren().clear();
+        System.out.println("loadGame");
+        rocketImg = new Image("images/rocketship02.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
+//        alienImg = new Image("images/alien.png", ALIEN_WIDTH, ALIEN_HEIGHT, true, true);
         meteorImg = new Image("images/meteor.png", METEOR_WIDTH, METEOR_HEIGHT, true, true);
         bgImage = new ImageView("images/spaceBG.png");
+        Image explosionImg = new Image("images/explosion2d.png", 200, 200, true, true);
+        explosionImage = new ImageView(explosionImg);
         //repositions the background so it can scroll from bottom to top
         bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
 
@@ -160,13 +165,18 @@ public class SpeedyRocket extends Application implements Commons {
      * Main game loop with a new background image loop
      */
     private void startGameLoop() {
+        System.out.println("startGameLoop");
+        gameSpeed = 7.0;
+        meteorMOVspeed = 4.0;
+        rocketSpeed = 4.5;
+        score = 0;
+        gamePlay = true;
         gameLoop = new AnimationTimer() {
             double yLocReset = bgImage.getLayoutY();
             @Override
             public void handle(long now) {
                 if (score % 3000 == 0) {
                     gameSpeed++;
-//                    alienMOVspeed++;
                     meteorMOVspeed++;
                     rocketSpeed++;
                     if (score > 30000) {
@@ -180,32 +190,20 @@ public class SpeedyRocket extends Application implements Commons {
                 bgImage.setLayoutY(yLoc);
 
                 player.processInput();
-//                if (aliensOnScreen == 0) {
-//                    spawnAliens(true);
-//                } else {
-//                    //gets y position of last spawned alien
-//                    if (aliens.get(aliens.size() - 1).getY() > SCREEN_HEIGHT/3) {
-//                        spawnAliens(true);
-//                    }
-//                }
                 if (meteorsOnScreen == 0) {
                     spawnMeteors(true);
                 } else {
-                    //gets y position of last spawned alien
+                    //gets y position of last spawned meteor
                     if (meteors.get(meteors.size() - 1).getY() > SCREEN_HEIGHT/3) {
                         spawnMeteors(true);
                     }
                 }
 
                 player.move();
-//                aliens.forEach(Sprite::move);
                 meteors.forEach(Sprite::move);
                 checkCollisions();
 
                 player.updateUI();
-//                aliens.forEach(Sprite::updateUI);
-//                aliens.forEach(Sprite::checkRemovability);
-//                removeSprites(aliens);
                 meteors.forEach(Sprite::updateUI);
                 meteors.forEach(Sprite::checkRemovability);
                 removeSprites(meteors);
@@ -230,35 +228,6 @@ public class SpeedyRocket extends Application implements Commons {
         input.addListeners();
         player = new Rocket(mainPanel, rocketImg, ROCKET_X_LOCATION - rocketImg.getWidth()/2,
                 ROCKET_Y_LOCATION, 0, 0, 0, 0, rocketSpeed, input);
-    }
-
-    /**
-     * Controls the spawning of {@link Alien} objects. If {@code random.nextInt()} generates
-     * an integer greater than 6, an {@link Alien} object is initialized with a random x position
-     * within the screen bounds and a y position above the screen bounds. The objects are then
-     * added to the {@code aliens} arraylist. Otherwise, if {@code random.nextInt()} generates a
-     * number less than 6, the method returns empty and no {@link Alien} objects are initialized.
-     * @param spawn boolean - Set to {@code True} to spawn {@link Alien} objects. Set to
-     *              {@code False} otherwise.
-     */
-    private void spawnAliens(boolean spawn) {
-        //limits the total active alien count to 3
-        if (spawn && gameSpeed < 12) {
-            if (aliensOnScreen > 3) {
-                return;
-            }
-        } else if (spawn && gameSpeed < 20) {
-            if (aliensOnScreen > 1) {
-                return;
-            }
-        }
-        //randomly positions the Alien objects' x position
-        double x = this.random.nextDouble() * (SCREEN_WIDTH - alienImg.getWidth());
-        //sets the y position to be above the screen
-        double y = 0 - alienImg.getHeight();
-        Alien alien = new Alien(mainPanel, alienImg, x, y, 0, 0, alienMOVspeed, 0);
-        aliens.add(alien); //adds the object to the arraylist
-        aliensOnScreen++;
     }
 
     /**
@@ -302,30 +271,26 @@ public class SpeedyRocket extends Application implements Commons {
             if (sprite.isRemovable()) {
                 sprite.removeFromLayer();
                 iter.remove();
-//                aliensOnScreen--;
                 meteorsOnScreen--;
             }
         }
     }
 
     /**
-     * Checks if the current {@code player} has collided with any {@link Alien} objects. If the
+     * Checks if the current {@code player} has collided with any {@link Meteor} objects. If the
      * there is a collision, {@code gamePlay} is set to {@code False}.
      */
     private void checkCollisions() {
         collision = false;
-//        for (Alien aliens: aliens) {
-//            if (player.collidesWith(aliens)) {
-//                System.out.println("Collision detected!");
-//                collision = true;
-////                gamePlay = false;
-//            }
-//        }
-        for (Meteor meteor: meteors) {
-            if (player.collidesWith(meteor)) {
+        for (Meteor meteors: meteors) {
+            if (player.collidesWith(meteors)) {
                 System.out.println("Collision detected!");
                 collision = true;
-//                gamePlay = false;
+                gamePlay = false;
+
+                explosionImage.relocate(player.getCenterX() - explosionImage.getImage().getWidth()/2,
+                        player.getCenterY() - explosionImage.getImage().getHeight()/2);
+                mainPanel.getChildren().add(explosionImage);
             }
         }
     }
@@ -335,24 +300,37 @@ public class SpeedyRocket extends Application implements Commons {
      */
     private void gameOver() {
         player.setDx(0); //sets player movement to halt
-        for (Alien alien : aliens) { //sets alien movement to halt
-            alien.setDy(0);
+        for (Meteor meteor : meteors) { //halts meteor movement
+            meteor.setDy(0);
         }
 
-        Text goMessage = new Text();
-        goMessage.setFont(Font.font("Impact", FontWeight.BOLD, 64));
+        Text goMessage = new Text("Press space to restart");
+        goMessage.setFont(Font.font("Impact", FontWeight.BOLD, 40));
         goMessage.setFill(Color.WHITE);
         goMessage.setStroke(Color.BLACK);
-        scorePanel.getChildren().add(goMessage);
+        mainPanel.getChildren().add(goMessage);
         double x = SCREEN_WIDTH/2 - goMessage.getBoundsInLocal().getWidth()/2;
         double y = SCREEN_HEIGHT/2 - goMessage.getBoundsInLocal().getHeight()/2;
         goMessage.relocate(x, y);
+
+        //detects space bar being pressed
+        spaceBar = event -> {
+            if (event.getCode() == KeyCode.SPACE) {
+                meteors.forEach(Sprite::remove);
+                player.removeFromLayer();
+                scene.removeEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
+                fadeScreen(mainPanel);
+                loadStartScreen();
+            }
+        };
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
     }
 
     /**
      * Creates the score text.
      */
     private void createScoreLayer() {
+        scorePanel.getChildren().clear();
         scoreText.setFont(Font.font("Impact", FontWeight.BOLD, 36));
         scoreText.setFill(Color.WHITE);
         scoreText.setStroke(Color.BLACK);
