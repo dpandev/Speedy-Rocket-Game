@@ -37,7 +37,7 @@ public class SpeedyRocket extends Application implements Commons {
 
     private double gameSpeed;
     private double meteorMOVspeed;
-    private double rocketSpeed;
+    private double rocketSpeed = 4.5;
     private int score;
 
     private AnimationTimer gameLoop;
@@ -98,7 +98,6 @@ public class SpeedyRocket extends Application implements Commons {
      * Loads the elements for the game start screen and starts the background image loop.
      */
     private void loadStartScreen() {
-        System.out.println("loadStartScreen");
         bgImage = new ImageView("images/spaceBG.png");
         bgImage.relocate(0, -bgImage.getImage().getHeight() + SCREEN_HEIGHT);
 
@@ -117,7 +116,6 @@ public class SpeedyRocket extends Application implements Commons {
         };
         scene.addEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
 
-        System.out.println("screenLoop");
         screenLoop = new AnimationTimer() {
             double yReset = bgImage.getLayoutY();
             @Override
@@ -148,8 +146,7 @@ public class SpeedyRocket extends Application implements Commons {
      */
     private void loadGame() {
         mainPanel.getChildren().clear();
-        System.out.println("loadGame");
-        rocketImg = new Image("images/rocketship02.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
+        rocketImg = new Image("images/rocketship03.png", ROCKET_WIDTH, ROCKET_HEIGHT, true, true);
 //        alienImg = new Image("images/alien.png", ALIEN_WIDTH, ALIEN_HEIGHT, true, true);
         meteorImg = new Image("images/meteor.png", METEOR_WIDTH, METEOR_HEIGHT, true, true);
         bgImage = new ImageView("images/spaceBG.png");
@@ -165,7 +162,6 @@ public class SpeedyRocket extends Application implements Commons {
      * Main game loop with a new background image loop
      */
     private void startGameLoop() {
-        System.out.println("startGameLoop");
         gameSpeed = 7.0;
         meteorMOVspeed = 4.0;
         rocketSpeed = 4.5;
@@ -284,11 +280,10 @@ public class SpeedyRocket extends Application implements Commons {
         collision = false;
         for (Meteor meteors: meteors) {
             if (player.collidesWith(meteors)) {
-                System.out.println("Collision detected!");
                 collision = true;
                 gamePlay = false;
 
-                explosionImage.relocate(player.getCenterX() - explosionImage.getImage().getWidth()/2,
+                 explosionImage.relocate(player.getCenterX() - explosionImage.getImage().getWidth()/2,
                         player.getCenterY() - explosionImage.getImage().getHeight()/2);
                 mainPanel.getChildren().add(explosionImage);
             }
@@ -299,12 +294,10 @@ public class SpeedyRocket extends Application implements Commons {
      * Initializes the end of game elements.
      */
     private void gameOver() {
-        player.setDx(0); //sets player movement to halt
-        for (Meteor meteor : meteors) { //halts meteor movement
-            meteor.setDy(0);
-        }
+        player.stopMovement();
+        meteors.forEach(Sprite::stopMovement);
 
-        Text goMessage = new Text("Press space to restart");
+        Text goMessage = new Text("Crashed!");
         goMessage.setFont(Font.font("Impact", FontWeight.BOLD, 40));
         goMessage.setFill(Color.WHITE);
         goMessage.setStroke(Color.BLACK);
@@ -317,9 +310,11 @@ public class SpeedyRocket extends Application implements Commons {
         spaceBar = event -> {
             if (event.getCode() == KeyCode.SPACE) {
                 meteors.forEach(Sprite::remove);
+                removeSprites(meteors);
                 player.removeFromLayer();
                 scene.removeEventFilter(KeyEvent.KEY_PRESSED, spaceBar);
                 fadeScreen(mainPanel);
+                scoreText.setText("");
                 loadStartScreen();
             }
         };

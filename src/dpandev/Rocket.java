@@ -69,9 +69,19 @@ public class Rocket extends Sprite implements Commons{
             dr = speed/6;
         }
         if (dx == 0 && r < 0) { //if not moving and rocket is tilted left
-            dr = speed/4;
+            if (r > -5) { //fixes rocket shaking bug
+                dr = 0;
+                r = 3;
+            } else {
+                dr = speed/4;
+            }
         } else if (dx == 0 && r > 0) { //if not moving and rocket is tilted right
-            dr = -speed/4;
+            if (r < 5) { //fixes rocket shaking bug
+                dr = 0;
+                r = 0;
+            } else {
+                dr = -speed/4;
+            }
         }
     }
 
