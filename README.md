@@ -1,1 +1,1 @@
-Rocketship games made with Java
+A simple 2d game made with javafx.
