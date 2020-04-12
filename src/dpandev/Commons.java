@@ -1,5 +1,8 @@
 package dpandev;
 
+/**
+ * Default values for in-game variables.
+ */
 public interface Commons {
     public static final double SCREEN_WIDTH = 400d;
     public static final double SCREEN_HEIGHT = 800d;

@@ -4,7 +4,10 @@ import javafx.animation.FadeTransition;
 import javafx.event.EventHandler;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -291,7 +294,8 @@ public class SpeedyRocket extends Application implements Commons {
     }
 
     /**
-     * Initializes the end of game elements.
+     * Initializes the end of game components. Displays a 'game over' message and waits for player
+     * input to restart the game.
      */
     private void gameOver() {
         player.stopMovement();
@@ -337,7 +341,7 @@ public class SpeedyRocket extends Application implements Commons {
     }
 
     /**
-     * Updates the score on screen.
+     * Updates the score on screen while player is in game.
      */
     private void updateScoreLayer() {
         scorePanel.getChildren().remove(scoreText);
@@ -350,7 +354,7 @@ public class SpeedyRocket extends Application implements Commons {
     }
 
     /**
-     * Applies a fade transition.
+     * Applies a quick fade transition.
      * @param pane the Pane to apply the transition to
      */
     private void fadeScreen(Pane pane) {

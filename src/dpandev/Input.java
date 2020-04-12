@@ -48,24 +48,18 @@ public class Input {
      * Sets the applicable {@link #keyboardBitSet} index value to {@code True} if the key event
      * corresponds to one of the specified key being pressed down.
      */
-    private EventHandler<KeyEvent> keyPressedEventHandler = new EventHandler<KeyEvent>() {
-        @Override
-        public void handle(KeyEvent event) {
-            //registers key being pressed down
-            keyboardBitSet.set(event.getCode().ordinal(), true);
-        }
+    private EventHandler<KeyEvent> keyPressedEventHandler = event -> {
+        //registers key being pressed down
+        keyboardBitSet.set(event.getCode().ordinal(), true);
     };
 
     /**
      * Sets the applicable {@link #keyboardBitSet} index value to {@code False} if the key event
      * corresponds to one of the specified key being released.
      */
-    private EventHandler<KeyEvent> keyReleasedEventHandler = new EventHandler<KeyEvent>() {
-        @Override
-        public void handle(KeyEvent event) {
-            //registers key being released
-            keyboardBitSet.set(event.getCode().ordinal(), false);
-        }
+    private EventHandler<KeyEvent> keyReleasedEventHandler = event -> {
+        //registers key being released
+        keyboardBitSet.set(event.getCode().ordinal(), false);
     };
 
     /**
